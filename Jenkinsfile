@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -10,24 +11,30 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                bat 'mvn clean test jacoco:report'
+                sh 'mvn clean test jacoco:report'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    bat 'mvn sonar:sonar'
+                    sh 'mvn sonar:sonar'
                 }
             }
         }
 
         stage('Docker Build & Deploy') {
             steps {
-                bat 'docker stop api-orders-container || exit 0'
-                bat 'docker rm api-orders-container || exit 0'
-                bat 'docker build -t api-orders .'
-                bat 'docker run -d -p 8080:8080 --name api-orders-container api-orders'
+
+                sh 'mvn package -DskipTests'
+
+                sh 'docker stop api-orders-container || true'
+
+                sh 'docker rm api-orders-container || true'
+
+                sh 'docker build -t api-orders .'
+
+                sh 'docker run -d -p 8080:8080 --name api-orders-container api-orders'
             }
         }
     }
